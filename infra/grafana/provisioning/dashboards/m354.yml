@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: m354
+    folder: M354
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

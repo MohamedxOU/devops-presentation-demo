@@ -1,0 +1,33 @@
+// 8. Monitor : sonde de production toutes les 5 minutes.
+// En cas d'échec, une carte est ouverte dans la colonne "À faire" de Trello : retour au Plan.
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    buildDiscarder(logRotator(numToKeepStr: '50'))
+  }
+
+  triggers { cron('H/5 * * * *') }
+
+  stages {
+    stage('Sonde production') {
+      steps {
+        sh 'python3 scripts/probe.py http://app-production:8000 500'
+      }
+    }
+  }
+
+  post {
+    failure {
+      withCredentials([string(credentialsId: 'trello-key', variable: 'TRELLO_KEY'),
+                       string(credentialsId: 'trello-token', variable: 'TRELLO_TOKEN')]) {
+        sh '''
+          python3 scripts/trello.py create "${TRELLO_LIST_TODO:-}" \
+            "Incident production : sonde en échec" \
+            "Détecté par la sonde Jenkins. Détails : $BUILD_URL console"
+        '''
+      }
+    }
+  }
+}

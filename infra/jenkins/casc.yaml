@@ -1,0 +1,103 @@
+# Jenkins configuré entièrement par fichier (Configuration as Code).
+# Les ${VARIABLES} viennent du fichier infra/.env.
+jenkins:
+  systemMessage: "Démo M354 : Culture DevOps et chaîne CI/CD"
+  numExecutors: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  globalNodeProperties:
+    - envVars:
+        env:
+          - key: DOCKER_IMAGE
+            value: "${DOCKER_IMAGE}"
+          - key: TRELLO_LIST_TODO
+            value: "${TRELLO_LIST_TODO}"
+          - key: TRELLO_LIST_DONE
+            value: "${TRELLO_LIST_DONE}"
+
+unclassified:
+  location:
+    url: "http://localhost:8080/"
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "dockerhub"
+              username: "${DOCKERHUB_USER}"
+              password: "${DOCKERHUB_TOKEN}"
+              description: "Docker Hub (token d'accès)"
+          - string:
+              scope: GLOBAL
+              id: "trello-key"
+              secret: "${TRELLO_KEY}"
+              description: "Clé API Trello"
+          - string:
+              scope: GLOBAL
+              id: "trello-token"
+              secret: "${TRELLO_TOKEN}"
+              description: "Token API Trello"
+
+jobs:
+  - script: |
+      multibranchPipelineJob('m354-pipeline') {
+        displayName('M354 : chaîne CI/CD')
+        branchSources {
+          git {
+            id = 'm354-demo'
+            remote('${GIT_REPO_URL}')
+          }
+        }
+        triggers {
+          periodicFolderTrigger {
+            interval('1m')
+          }
+        }
+        orphanedItemStrategy {
+          discardOldItems {
+            numToKeep(10)
+          }
+        }
+      }
+  - script: |
+      pipelineJob('m354-rollback') {
+        displayName('M354 : retour arrière (Operate)')
+        parameters {
+          stringParam('VERSION', '', 'Version à remettre en production, ex. 1.0.3')
+        }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('${GIT_REPO_URL}') }
+                branch('*/main')
+              }
+            }
+            scriptPath('jenkins/Jenkinsfile.rollback')
+          }
+        }
+      }
+  - script: |
+      pipelineJob('m354-monitor') {
+        displayName('M354 : sonde de production (Monitor)')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('${GIT_REPO_URL}') }
+                branch('*/main')
+              }
+            }
+            scriptPath('jenkins/Jenkinsfile.monitor')
+          }
+        }
+      }

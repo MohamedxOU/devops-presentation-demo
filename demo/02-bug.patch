@@ -1,0 +1,13 @@
+diff --git a/app/templates/index.html b/app/templates/index.html
+index f83d24b..4025c69 100644
+--- a/app/templates/index.html
++++ b/app/templates/index.html
+@@ -27,7 +27,7 @@
+           <td>{{ e.numero }}</td>
+           <td>{{ e.titre }}</td>
+           <td>{{ e.date }}</td>
+-          <td class="salle">{{ e.salle }}</td>
++          <td class="salle">{{ e.sale }}</td>
+         </tr>
+         {% endfor %}
+       </tbody>

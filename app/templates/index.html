@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Planning des exposés M354</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Planning des exposés M354</h1>
+    <p>Virtualisation et Cloud Computing</p>
+  </header>
+  <main>
+    <table>
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Sujet</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in exposes %}
+        <tr>
+          <td>{{ e.numero }}</td>
+          <td>{{ e.titre }}</td>
+          <td>{{ e.date }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+  <footer>
+    <span class="badge env-{{ env }}">{{ env }}</span>
+    <span class="badge">version {{ version }}</span>
+  </footer>
+</body>
+</html>

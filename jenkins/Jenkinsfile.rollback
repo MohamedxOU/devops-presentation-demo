@@ -1,0 +1,39 @@
+// 7. Operate : retour arrière vers une version déjà publiée
+pipeline {
+  agent any
+
+  options { timestamps() }
+
+  parameters {
+    string(name: 'VERSION', defaultValue: '', description: 'Version à remettre en production, ex. 1.0.3')
+  }
+
+  environment {
+    IMAGE = "${env.DOCKER_IMAGE ?: 'm354-planning'}"
+  }
+
+  stages {
+    stage('Vérifier la version') {
+      steps {
+        script {
+          if (!params.VERSION?.trim()) {
+            error 'Indiquer la version à restaurer (paramètre VERSION).'
+          }
+          currentBuild.displayName = "#${env.BUILD_NUMBER} rollback v${params.VERSION}"
+        }
+        sh '''
+          docker image inspect "$IMAGE:$VERSION" >/dev/null 2>&1 || docker pull "$IMAGE:$VERSION"
+        '''
+      }
+    }
+
+    stage('Redéployer') {
+      steps {
+        sh '''
+          ./scripts/deploy.sh production "$IMAGE:$VERSION"
+          ./scripts/smoke.sh app-production "$VERSION"
+        '''
+      }
+    }
+  }
+}
